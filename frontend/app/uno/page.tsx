@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { io } from "socket.io-client";
-import Image from "next/image";
+import { io, Socket } from "socket.io-client";
 
 const socket = io(
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001",
@@ -59,8 +57,6 @@ const getCardImage = (card: Card) => {
 };
 
 export default function Home() {
-  const router = useRouter();
-
   const [name, setName] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [players, setPlayers] = useState<string[]>([]);
@@ -110,14 +106,14 @@ export default function Home() {
     setCurrentRoom("");
     setPlayers([]);
     setCopied(false);
-    setUnoSaved(false);
-    setPendingWildIndex(null);
   };
 
   const copyCode = async () => {
     if (!currentRoom) return;
+
     await navigator.clipboard.writeText(currentRoom);
     setCopied(true);
+
     setTimeout(() => setCopied(false), 1500);
   };
 
@@ -202,60 +198,77 @@ export default function Home() {
     });
   };
 
-  /* ---------------- GAME PAGE ---------------- */
+  /* GAME PAGE */
 
   if (game) {
     const otherPlayers = game.players.filter((p) => p.name !== name);
 
     return (
-      <main className="min-h-screen relative text-slate-100 p-4 overflow-hidden">
-        <Image
-          src="/Assets/Uno-Background.png"
-          alt=""
-          fill
-          className="object-cover -z-10"
-        />
-
+      <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-100 p-4">
         <div className="max-w-6xl mx-auto space-y-5">
           <div className="flex justify-between items-center">
-            <button onClick={() => router.push("/")}>
-              <Image
-                src="/Assets/Leave.png"
-                alt="Home"
-                width={130}
-                height={50}
-              />
+            <button
+              onClick={leaveRoom}
+              className="bg-slate-700 px-4 py-2 rounded-xl hover:bg-slate-600"
+            >
+              ← Lobby
             </button>
 
-            <h1 className="text-2xl font-bold drop-shadow-lg">UNO Match</h1>
+            <h1 className="text-2xl font-bold">UNO Match</h1>
 
-            <button onClick={leaveRoom}>
-              <Image
-                src="/Assets/Leave.png"
-                alt="Leave"
-                width={130}
-                height={50}
-              />
+            <button
+              onClick={leaveRoom}
+              className="bg-red-500 px-4 py-2 rounded-xl hover:bg-red-400"
+            >
+              Leave
             </button>
           </div>
 
-          <div className="text-center text-white text-lg font-bold">
-            Room Code: {currentRoom}
+          <div className="text-center text-slate-400">
+            Room Code:{" "}
+            <span className="font-bold text-cyan-300 tracking-widest">
+              {currentRoom}
+            </span>
           </div>
 
           {winner && (
-            <div className="text-center space-y-4">
-              <div className="text-4xl font-black text-yellow-300 animate-bounce drop-shadow-xl">
-                🏆 {winner.name} Wins!
+            <>
+              {/* Confetti */}
+              <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
+                {[...Array(40)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-3 h-3 rounded-sm animate-bounce"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      backgroundColor: [
+                        "#22d3ee",
+                        "#facc15",
+                        "#ef4444",
+                        "#22c55e",
+                        "#a855f7",
+                      ][i % 5],
+                      animationDelay: `${i * 0.08}s`,
+                      animationDuration: `${1.2 + Math.random()}s`,
+                    }}
+                  />
+                ))}
               </div>
 
-              <button
-                onClick={() => socket.emit("playAgain", currentRoom)}
-                className="bg-cyan-400 px-6 py-3 rounded-xl text-black font-bold"
-              >
-                Play Again
-              </button>
-            </div>
+              <div className="text-center space-y-4">
+                <div className="inline-block px-8 py-4 rounded-3xl bg-yellow-400 text-slate-900 text-2xl font-black shadow-[0_0_30px_rgba(250,204,21,0.8)] animate-pulse">
+                  🏆 {winner.name} Wins!
+                </div>
+
+                <button
+                  onClick={() => socket.emit("playAgain", currentRoom)}
+                  className="bg-cyan-500 text-slate-950 px-6 py-3 rounded-xl font-bold hover:bg-cyan-400 transition hover:scale-105"
+                >
+                  Play Again
+                </button>
+              </div>
+            </>
           )}
 
           <div className="grid md:grid-cols-3 gap-4 items-start">
@@ -264,10 +277,10 @@ export default function Home() {
               <button
                 onClick={drawCard}
                 disabled={!isMyTurn || !!hasPlayableCard}
-                className={`transition ${
+                className={`p-0 bg-transparent border-0 outline-none transition ${
                   isMyTurn && !hasPlayableCard
-                    ? "hover:scale-105 drop-shadow-[0_0_24px_rgba(250,204,21,1)]"
-                    : "opacity-70"
+                    ? "hover:scale-105 drop-shadow-[0_0_28px_rgba(250,204,21,1)] animate-pulse"
+                    : "opacity-60"
                 }`}
               >
                 <img
@@ -286,9 +299,9 @@ export default function Home() {
                 className="w-32 h-44 mx-auto object-contain"
               />
 
-              <div className="mt-3 text-lg font-bold">
-                Active Color:{" "}
-                <span className="text-cyan-300">
+              <div className="mt-3 text-sm">
+                Active Color:
+                <span className="ml-2 text-cyan-300 font-bold">
                   {topCard?.color || "wild"}
                 </span>
               </div>
@@ -296,14 +309,31 @@ export default function Home() {
 
             {/* Turn */}
             <div className="text-center md:text-right">
-              <div className="text-sm uppercase">Turn</div>
+              <div className="text-sm text-slate-400 uppercase tracking-widest">
+                Current Turn
+              </div>
 
-              <div className="text-2xl font-black text-cyan-300">
+              <div className="mt-2 text-2xl font-black text-cyan-300">
                 {game.players[game.currentPlayerIndex]?.name}
               </div>
 
+              <div className="mt-3">
+                {winner ? (
+                  <span className="bg-yellow-500 text-slate-900 px-4 py-2 rounded-xl font-bold">
+                    Game Over
+                  </span>
+                ) : isMyTurn ? (
+                  <span className="bg-emerald-500 text-slate-950 px-4 py-2 rounded-xl font-bold animate-pulse shadow-[0_0_20px_rgba(34,197,94,0.8)]">
+                    YOUR TURN
+                  </span>
+                ) : (
+                  <span className="bg-slate-700 px-4 py-2 rounded-xl font-semibold">
+                    Waiting...
+                  </span>
+                )}
+              </div>
               {myPlayer && myPlayer.hand.length <= 2 && !winner && (
-                <div className="mt-4 flex flex-col items-center md:items-end">
+                <div className="mt-4 w-25 flex flex-col items-center">
                   <button
                     onClick={() => {
                       socket.emit("sayUno", {
@@ -312,15 +342,16 @@ export default function Home() {
                       });
 
                       setUnoSaved(true);
+
                       setTimeout(() => setUnoSaved(false), 2000);
                     }}
-                    className="bg-red-500 px-6 py-3 rounded-xl font-bold text-lg"
+                    className="w-25 bg-red-500 px-6 py-3 rounded-xl font-bold text-lg hover:bg-red-400 transition"
                   >
                     UNO!
                   </button>
 
                   {unoSaved && (
-                    <div className="mt-2 text-emerald-300 font-bold">
+                    <div className="mt-2 text-emerald-400 font-semibold text-sm text-center whitespace-nowrap">
                       UNO Registered!
                     </div>
                   )}
@@ -330,17 +361,18 @@ export default function Home() {
           </div>
 
           {/* Players Table */}
-          <div className="ml-auto w-full md:w-56 bg-black/50 rounded-xl p-3">
-            <h3 className="text-center text-cyan-300 font-bold mb-2">
+          <div className="mt-5 ml-auto w-56 bg-slate-800/90 border border-slate-700 rounded-xl p-3 shadow-xl">
+            <h3 className="text-sm font-bold text-cyan-300 text-center mb-2">
               Players
             </h3>
 
-            <div className="space-y-2">
+            <div className="space-y-2 text-sm">
               {otherPlayers.map((p, i) => (
-                <div key={i} className="bg-black/40 rounded-lg px-3 py-2">
-                  <div className="flex justify-between">
-                    <span>{p.name}</span>
-                    <span className="text-cyan-300 font-bold">
+                <div key={i} className="bg-slate-700/80 rounded-lg px-3 py-2">
+                  <div className="grid grid-cols-[1fr_auto] items-center gap-4">
+                    <span className="truncate">{p.name}</span>
+
+                    <span className="font-bold text-cyan-300 min-w-[24px] text-right">
                       {p.hand.length}
                     </span>
                   </div>
@@ -353,7 +385,7 @@ export default function Home() {
                           targetName: p.name,
                         })
                       }
-                      className="mt-2 w-full bg-yellow-400 text-black text-sm font-bold py-1 rounded-md"
+                      className="mt-2 w-full bg-yellow-500 text-black text-[11px] font-bold py-1 rounded-md hover:bg-yellow-400"
                     >
                       UNO CAUGHT!
                     </button>
@@ -378,9 +410,9 @@ export default function Home() {
                   key={i}
                   disabled={!valid}
                   onClick={() => playCard(i)}
-                  className={`transition ${
+                  className={`p-0 bg-transparent border-0 outline-none transition duration-150 ${
                     valid
-                      ? "hover:-translate-y-2 hover:scale-105"
+                      ? "hover:-translate-y-1 drop-shadow-[0_0_8px_rgba(34,211,238,0.45)]"
                       : "opacity-70"
                   }`}
                 >
@@ -421,68 +453,52 @@ export default function Home() {
     );
   }
 
-  /* ---------------- LOBBY PAGE ---------------- */
+  /* LOBBY PAGE */
 
   return (
-    <main className="min-h-screen relative flex items-center justify-center p-6 overflow-hidden">
-      <Image
-        src="/Assets/Uno-Background.png"
-        alt=""
-        fill
-        className="object-cover -z-10"
-      />
-
-      <div className="bg-black/50 rounded-2xl p-8 w-full max-w-md space-y-4 text-white backdrop-blur-sm">
-        <div className="flex justify-center">
-          <Image
-            src="/Assets/UnoLobby-Logo.png"
-            alt="UNO"
-            width={260}
-            height={90}
-          />
-        </div>
+    <main className="min-h-screen flex items-center justify-center bg-slate-950 p-6">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 w-full max-w-md space-y-4 text-slate-100">
+        <h1 className="text-3xl font-bold text-cyan-300 text-center">
+          Nav's UNO
+        </h1>
 
         <input
           placeholder="Your name"
-          className="w-full bg-black/40 border border-white/20 p-3 rounded-lg"
+          className="w-full bg-slate-800 border border-slate-700 p-3 rounded-lg"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
 
         <input
           placeholder="Room code"
-          className="w-full bg-black/40 border border-white/20 p-3 rounded-lg"
+          className="w-full bg-slate-800 border border-slate-700 p-3 rounded-lg"
           value={roomCode}
           onChange={(e) => setRoomCode(e.target.value)}
         />
 
-        <button onClick={createRoom} className="w-full">
-          <Image
-            src="/Assets/CreateRoom.png"
-            alt="Create Room"
-            width={420}
-            height={70}
-          />
+        <button
+          onClick={createRoom}
+          className="w-full bg-cyan-500 text-slate-950 p-3 rounded-lg font-semibold"
+        >
+          Create Room
         </button>
 
-        <button onClick={joinRoom} className="w-full">
-          <Image
-            src="/Assets/JoinRoom.png"
-            alt="Join Room"
-            width={420}
-            height={70}
-          />
+        <button
+          onClick={joinRoom}
+          className="w-full bg-indigo-500 p-3 rounded-lg font-semibold"
+        >
+          Join Room
         </button>
 
         {currentRoom && (
           <>
             <div>
-              <h2 className="font-bold mb-2 text-center">Players</h2>
+              <h2 className="font-semibold mb-2">Players</h2>
 
               {players.map((player, i) => (
                 <div
                   key={i}
-                  className="bg-black/40 p-2 rounded mb-2 text-center"
+                  className="bg-slate-800 border border-slate-700 p-2 rounded mb-2"
                 >
                   {player}
                 </div>
@@ -491,28 +507,28 @@ export default function Home() {
 
             <button
               onClick={startGame}
-              className="w-full bg-emerald-400 text-black p-3 rounded-lg font-bold"
+              className="w-full bg-emerald-500 text-slate-950 p-3 rounded-lg font-semibold"
             >
               Start Game
             </button>
 
-            <button onClick={leaveRoom} className="w-full">
-              <Image
-                src="/Assets/Leave.png"
-                alt="Leave Room"
-                width={420}
-                height={70}
-              />
+            <button
+              onClick={leaveRoom}
+              className="w-full bg-red-500 p-3 rounded-lg font-semibold"
+            >
+              Leave Room
             </button>
 
-            <div className="text-center pt-2">
-              Room Code:{" "}
-              <span className="font-bold tracking-widest text-cyan-300">
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 text-center">
+              <div className="text-sm text-slate-400 mb-1">Room Code</div>
+
+              <div className="text-xl font-bold text-cyan-300 tracking-widest">
                 {currentRoom}
-              </span>
+              </div>
+
               <button
                 onClick={copyCode}
-                className="block mx-auto mt-3 bg-slate-700 px-4 py-2 rounded-lg"
+                className="mt-3 bg-slate-700 px-4 py-2 rounded-lg"
               >
                 {copied ? "Copied!" : "Copy Code"}
               </button>
