@@ -4,65 +4,70 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-6 py-10">
+    <main
+      className="min-h-screen text-white flex items-center justify-center px-6 py-10 bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: "url('/Assets/MainPage-Background.jpg')",
+      }}
+    >
       <div className="w-full max-w-6xl">
         {/* Header */}
         <div className="text-center mb-14">
-          <h1 className="text-6xl md:text-7xl font-black tracking-tight text-cyan-300 drop-shadow-lg">
-            Nav Games
-          </h1>
+          <img
+            src="/Assets/Navgames.png"
+            alt="Nav Games"
+            className="w-full max-w-[650px] mx-auto drop-shadow-2xl"
+            draggable={false}
+          />
 
-          <p className="text-slate-400 mt-4 text-lg">
+          <p className="text-slate-300 mt-4 text-lg drop-shadow-lg">
             Multiplayer browser games made by Nav
           </p>
         </div>
 
         {/* Cards */}
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 items-center">
           {/* UNO */}
           <Link
             href="/uno"
-            className="group bg-slate-900 border border-slate-800 rounded-3xl p-8 hover:border-cyan-400 hover:-translate-y-1 hover:shadow-2xl transition block"
+            className="group block transition hover:-translate-y-2"
           >
-            <div className="text-6xl mb-5">🃏</div>
+            <img
+              src="/Assets/MainPage-Uno.png"
+              alt="UNO"
+              className="w-full max-w-[420px] mx-auto drop-shadow-2xl transition group-hover:scale-105"
+              draggable={false}
+            />
 
-            <h2 className="text-4xl font-bold text-cyan-300 group-hover:text-cyan-200 transition">
-              UNO
-            </h2>
-
-            <p className="text-slate-400 mt-3 text-lg">
-              Create rooms, invite friends, and play online UNO.
-            </p>
-
-            <div className="mt-6 text-sm text-cyan-300 font-semibold">
+            <div className="text-center mt-4 text-cyan-300 font-bold text-lg group-hover:text-cyan-200 transition">
               Play Now →
             </div>
           </Link>
 
           {/* RPS */}
-          <div className="group relative bg-slate-900 border border-slate-800 rounded-3xl p-8 cursor-not-allowed opacity-90">
-            <div className="text-6xl mb-5">✊</div>
+          <div className="relative group cursor-not-allowed">
+            <img
+              src="/Assets/MainPage-RPS.png"
+              alt="Rock Paper Scissors"
+              className="w-full max-w-[420px] mx-auto opacity-95 drop-shadow-2xl"
+              draggable={false}
+            />
 
-            <h2 className="text-4xl font-bold text-purple-300">
-              Rock Paper Scissors
-            </h2>
+            <img
+              src="/Assets/Comingsoon.png"
+              alt="Coming Soon"
+              className="absolute top-2 right-8 w-32 opacity-0 group-hover:opacity-100 transition"
+              draggable={false}
+            />
 
-            <p className="text-slate-400 mt-3 text-lg">
-              Quick online battles against friends.
-            </p>
-
-            <div className="absolute top-5 right-5 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition">
-              Coming Soon
-            </div>
-
-            <div className="mt-6 text-sm text-slate-500 font-semibold">
+            <div className="text-center mt-4 text-slate-400 font-bold text-lg">
               Locked
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-14 text-sm text-slate-500">
+        <div className="text-center mt-14 text-sm text-slate-300 drop-shadow-md">
           Version 1 Launch
         </div>
       </div>
