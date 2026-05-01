@@ -40,10 +40,13 @@ export default function Home() {
           </Link>
 
           {/* RPS */}
-          <div className="group relative bg-slate-900 border border-slate-800 rounded-3xl p-8 cursor-not-allowed opacity-90">
+          <Link
+            href="/rps"
+            className="group bg-slate-900 border border-slate-800 rounded-3xl p-8 hover:border-purple-400 hover:-translate-y-1 hover:shadow-2xl transition block"
+          >
             <div className="text-6xl mb-5">✊</div>
 
-            <h2 className="text-4xl font-bold text-purple-300">
+            <h2 className="text-4xl font-bold text-purple-300 group-hover:text-purple-200 transition">
               Rock Paper Scissors
             </h2>
 
@@ -51,14 +54,10 @@ export default function Home() {
               Quick online battles against friends.
             </p>
 
-            <div className="absolute top-5 right-5 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition">
-              Coming Soon
+            <div className="mt-6 text-sm text-purple-300 font-semibold">
+              Play Now →
             </div>
-
-            <div className="mt-6 text-sm text-slate-500 font-semibold">
-              Locked
-            </div>
-          </div>
+          </Link>
         </div>
 
         {/* Footer */}

@@ -8,6 +8,8 @@ import {
 
 import { Server, Socket } from 'socket.io';
 import { UnoEngine } from './engine/uno.engine';
+import { RpsEngine } from './rps/rps.engine';
+import { Choice } from './rps/rps.types';
 
 type Room = {
   players: string[];
@@ -35,6 +37,7 @@ export class GameGateway {
 
   handleDisconnect(client: Socket) {
     this.removeClient(client);
+    this.rps.removePlayer(client.id);
   }
 
   private removeClient(client: Socket) {
@@ -67,6 +70,8 @@ export class GameGateway {
 
     this.server.to(roomCode).emit('playersUpdated', room.players);
   }
+
+  private rps = new RpsEngine();
 
   @SubscribeMessage('leaveRoom')
   handleLeaveRoom(
@@ -308,5 +313,58 @@ export class GameGateway {
     }
 
     this.server.to(data.roomCode).emit('gameStarted', room.game.getState());
+  }
+  @SubscribeMessage('createRpsRoom')
+  createRpsRoom(
+    @MessageBody() name: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const room = this.rps.createRoom(name, client.id);
+
+    client.join(room.roomCode);
+
+    client.emit('rpsRoomCreated', room);
+  }
+
+  @SubscribeMessage('joinRpsRoom')
+  joinRpsRoom(
+    @MessageBody() data: { roomCode: string; name: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const room = this.rps.joinRoom(data.roomCode, data.name, client.id);
+
+    if (!room) {
+      client.emit('errorMessage', 'Room invalid or full');
+      return;
+    }
+
+    client.join(room.roomCode);
+
+    this.server.to(room.roomCode).emit('rpsPlayersUpdated', room);
+  }
+
+  @SubscribeMessage('rpsChoose')
+  rpsChoose(
+    @MessageBody()
+    data: {
+      roomCode: string;
+      playerName: string;
+      choice: Choice;
+    },
+  ) {
+    const room = this.rps.choose(data.roomCode, data.playerName, data.choice);
+
+    if (!room) return;
+
+    this.server.to(data.roomCode).emit('rpsGameState', room);
+  }
+
+  @SubscribeMessage('rpsPlayAgain')
+  rpsPlayAgain(@MessageBody() roomCode: string) {
+    const room = this.rps.nextRound(roomCode);
+
+    if (!room) return;
+
+    this.server.to(roomCode).emit('rpsGameState', room);
   }
 }
